@@ -1,14 +1,12 @@
-import de.vandermeer.asciitable.AsciiTable
+import de.vandermeer.asciitable.{AT_Context, AsciiTable}
 
 object AsciiWidgets {
-  def asciiTable(title: String, contents: List[String]*): String = {
-    assert(contents.nonEmpty)
-    val table = new AsciiTable
-    val rows = contents.length
+  def asciiTable(title: String, rows: List[String]*): String = {
+    assert(rows.nonEmpty)
+    val table = new AsciiTable(new AT_Context().setWidth(120))
     table.addRule()
-    0 until rows foreach { i =>
-      val rowContents: List[String] = contents(i)
-      table.addRow(rowContents:_*)
+    rows foreach { row =>
+      table.addRow(row:_*)
     }
     table.addRule()
     s"\n$title\n" + table.render
