@@ -23,7 +23,8 @@ class Demo extends DockerClientShow {
   val container: ContainerCreation = standardTry() {
     // Host ports and container ports are the same for the http and ssh services
     val hostPorts: List[(String, List[PortBinding])] =
-      List(80, 22) map { port => (port.toString, List(PortBinding.of("0.0.0.0", port))) }
+      List(2080 -> 80, 2022 -> 22)
+        .map { case (hostPort, clientPort) => (clientPort.toString, List(PortBinding.of("0.0.0.0", hostPort))) }
 
     // Bind container port 443 to an automatically allocated available host port.
     val sslTuple: (String, List[PortBinding]) = ("443", List(PortBinding.randomPort("0.0.0.0")))
@@ -73,7 +74,7 @@ class Demo extends DockerClientShow {
   // todo send to stdin and receive from stdout and stderr
   standardTry(errorsAreFatal=false) {
     val stream: String = dockerClient.attachContainer(
-      "bigBadContainer",
+      container.id,
       AttachParameter.LOGS,
       AttachParameter.STDOUT,
       AttachParameter.STDERR,
