@@ -1,3 +1,4 @@
+import java.io.{PipedInputStream, PipedOutputStream}
 import java.util.{List => JList, Map => JMap, Set => JSet}
 import com.spotify.docker.client.DockerClient.AttachParameter
 import com.spotify.docker.client.messages.{ContainerConfig, ContainerCreation, ContainerInfo, ExecCreation, HostConfig, PortBinding, ProgressMessage}
@@ -60,29 +61,36 @@ class Demo extends DockerClientShow {
   dockerClient.startContainer(container.id)
 
   // Attach to a container
-  // todo send to stdin and receive from stdout and stderr
-  standardTry(errorsAreFatal=false) {
-    val stream: String = dockerClient.attachContainer(
+  /*standardTry(errorsAreFatal=false) {
+    val stdoutPipe = new PipedOutputStream(new PipedInputStream)
+    val stderrPipe = new PipedOutputStream(new PipedInputStream)
+    dockerClient.attachContainer(
       container.id,
       AttachParameter.LOGS,
       AttachParameter.STDOUT,
       AttachParameter.STDERR,
       AttachParameter.STREAM
-    ).readFully
-    println(stream)
-  }{}
+    ).attach(stdoutPipe, stderrPipe, true)
+  }{}*/
 
   // Execute command inside running container with attached STDIN, STDOUT and STDERR
-  val execCreation: ExecCreation = dockerClient.execCreate(
-    container.id,
-    Array("bash", "-c", "ls"),
-    DockerClient.ExecCreateParam.attachStdin,
-    DockerClient.ExecCreateParam.attachStdout,
-    DockerClient.ExecCreateParam.attachStderr
-  )
-  val output: LogStream = dockerClient.execStart(execCreation.id)
-  val execOutput: String = output.readFully
-  println(s"Output of command: $execOutput")
+  // fixme This is crap
+  Iterator
+    .continually(Console.in.readLine)
+    .takeWhile(_ => io.StdIn.readLine("\nEnter to end: ").isEmpty)
+    .foreach { command =>
+      println(command)
+      val execCreation: ExecCreation = dockerClient.execCreate(
+        container.id,
+        command.split(" "),
+        DockerClient.ExecCreateParam.attachStdin,
+        DockerClient.ExecCreateParam.attachStdout,
+        DockerClient.ExecCreateParam.attachStderr
+      )
+      val output: LogStream = dockerClient.execStart(execCreation.id)
+      val execOutput: String = output.readFully
+      println(s"Output of $command: $execOutput")
+    }
 
 
   // Resize a container's tty
