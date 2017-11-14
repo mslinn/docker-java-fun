@@ -1,10 +1,11 @@
 import java.nio.file.Paths
 import java.util
 import java.util.Base64
-import com.spotify.docker.client.DockerClient
+import java.util.concurrent.atomic.AtomicReference
+import com.spotify.docker.client.{DockerClient, ProgressHandler}
 import com.spotify.docker.client.DockerClient.{AttachParameter, ListContainersParam, ListImagesParam, LogsParam, Signal}
 import com.spotify.docker.client.messages.swarm.SecretSpec
-import com.spotify.docker.client.messages.{Container, ContainerChange, ContainerConfig, ContainerCreation, ContainerExit, ContainerInfo, ContainerStats, Image, TopResults}
+import com.spotify.docker.client.messages.{Container, ContainerChange, ContainerConfig, ContainerCreation, ContainerExit, ContainerInfo, ContainerStats, Image, ProgressMessage, TopResults}
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -200,6 +201,20 @@ object Main extends App {
   // List images
   standardTry {
     val quxImages: List[Image] = dockerClient.listImages(ListImagesParam.withLabel("foo", "qux")).asScala.toList
+  }{}
+
+  // Build image from a Dockerfile
+  standardTry {
+    val imageIdFromMessage: AtomicReference[String] = new AtomicReference()
+
+    val dockerDirectory = sys.props("user.home") + "/.docker"
+    val returnedImageId: String = dockerClient.build(
+      Paths.get(dockerDirectory), "test", (message: ProgressMessage) =>
+        Option(message.buildImageId).foreach { imageId =>
+          imageIdFromMessage.set(imageId)
+        }
+    )
+    // todo Discover how to learn when the build is complete
   }{}
 
 
