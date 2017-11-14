@@ -1,11 +1,11 @@
+import com.spotify.docker.client.DockerClient
 import com.spotify.docker.client.DockerClient.{ListContainersParam, LogsParam}
-import com.spotify.docker.client.messages.{Container, ContainerChange, ContainerConfig, ContainerCreation, ContainerInfo, TopResults}
+import com.spotify.docker.client.messages.{Container, ContainerChange, ContainerConfig, ContainerCreation, ContainerInfo, ContainerStats, TopResults}
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import scala.collection.JavaConverters._
-import com.spotify.docker.client.DockerClient
 import scala.collection.mutable
 
-/** Typing along with https://github.com/spotify/docker-dockerClient/blob/master/docs/user_manual.md#create-a-container */
+/** Typing along with https://github.com/spotify/docker-dockerClient/blob/master/docs/user_manual.md */
 object Main extends App {
   // Create a dockerClient based on DOCKER_HOST and DOCKER_CERT_PATH env vars
   import com.spotify.docker.client.DefaultDockerClient
@@ -13,13 +13,17 @@ object Main extends App {
   AsciiWidgets.asciiTable("Docker Client", List(show(dockerClient)))
 
   protected def show(dockerClient: DockerClient): String =
-    s"""DockerClient for ${ dockerClient.getHost }, info: ${ dockerClient.info }""" + {
-      try { /* Connects to localhost */
-        s"""${ dockerClient.listConfigs.asScala.mkString(", ") }"""
+    try {
+      s"""DockerClient for ${ dockerClient.getHost }, info: ${ dockerClient.info }
+         |${ dockerClient.listConfigs.asScala.mkString(", ") }
+         |""".stripMargin
       } catch {
-        case e: Exception => e.getMessage
+        case e: Exception =>
+          System.err.println(s"Error: ${ e.getMessage }")
+          println("Is docker running?")
+          System.exit(0)
+          ""
       }
-    }
 
     // ...or use the builder
     // import com.spotify.docker.dockerClient.DockerClient
@@ -115,4 +119,18 @@ object Main extends App {
     case e: Exception =>
       println(e.getMessage)
   }
+
+  // Get container stats based on resource usage
+  val stats: ContainerStats = dockerClient.stats(container.id)
+  AsciiWidgets.asciiTable("New Container Info", List(show(containerInfo)))
+
+  def show(containerStats: ContainerStats) =
+    s"""ContainerStats:
+       |  blockIoStats = ${ containerStats.blockIoStats }
+       |  cpuStats     = ${ containerStats.cpuStats }
+       |  memoryStats  = ${ containerStats.memoryStats }
+       |  network      = ${ containerStats.network }
+       |  precpuStats  = ${ containerStats.precpuStats }
+       |  read         = ${ containerStats.read }
+       |""".stripMargin
 }
