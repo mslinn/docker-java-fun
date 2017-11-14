@@ -1,6 +1,6 @@
 import com.spotify.docker.client.DockerClient
-import com.spotify.docker.client.DockerClient.{ListContainersParam, LogsParam}
-import com.spotify.docker.client.messages.{Container, ContainerChange, ContainerConfig, ContainerCreation, ContainerInfo, ContainerStats, TopResults}
+import com.spotify.docker.client.DockerClient.{AttachParameter, ListContainersParam, LogsParam, Signal}
+import com.spotify.docker.client.messages.{Container, ContainerChange, ContainerConfig, ContainerCreation, ContainerExit, ContainerInfo, ContainerStats, TopResults}
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -13,16 +13,12 @@ object Main extends App {
   AsciiWidgets.asciiTable("Docker Client", List(show(dockerClient)))
 
   protected def show(dockerClient: DockerClient): String =
-    try {
+    standardTry {
       s"""DockerClient for ${ dockerClient.getHost }, info: ${ dockerClient.info }
          |${ dockerClient.listConfigs.asScala.mkString(", ") }
          |""".stripMargin
-      } catch {
-        case e: Exception =>
-          System.err.println(s"Error: ${ e.getMessage }")
-          println("Is docker running?")
-          System.exit(0)
-          ""
+      } {
+        println("Is docker running?")
       }
 
     // ...or use the builder
@@ -95,11 +91,9 @@ object Main extends App {
 
   // Get container logs
   val logs: String =
-    try {
+    standardTry {
       dockerClient.logs("containerID", LogsParam.stdout, LogsParam.stderr).readFully
-    } catch {
-      case _: Exception => ""
-    }
+    }{}
   println(s"Container logs: $logs")
 
   // Inspect changes on a container's filesystem
@@ -107,7 +101,7 @@ object Main extends App {
   println(s"Container file changes: ${ changes.map(x => s"${ x.kind }: ${ x.path }").mkString("\n") }")
 
   // Export a container
-  try {
+  standardTry {
     val tarStream: TarArchiveInputStream = new TarArchiveInputStream(dockerClient.exportContainer(container.id))
     val files: List[String] = Iterator
       .continually(tarStream.getNextTarEntry)
@@ -115,10 +109,7 @@ object Main extends App {
       .map { _.getName }
       .toList
     println(s"Files stored in the tar are: ${ files.mkString("\n") }")
-  } catch {
-    case e: Exception =>
-      println(e.getMessage)
-  }
+  }{}
 
   // Get container stats based on resource usage
   val stats: ContainerStats = dockerClient.stats(container.id)
@@ -133,4 +124,67 @@ object Main extends App {
        |  precpuStats  = ${ containerStats.precpuStats }
        |  read         = ${ containerStats.read }
        |""".stripMargin
+
+  // Resize a container's tty
+  dockerClient.resizeTty(container.id, 30, 50) // todo how do we see the change?
+
+  // Start a container
+  standardTry {
+    dockerClient.startContainer(container.id)
+  }{}
+
+  // Stop a container
+  standardTry {
+    dockerClient.stopContainer(container.id, 10); // kill if not stopped after 10 seconds
+  }{}
+
+  // Restart a container
+  standardTry {
+    dockerClient.restartContainer(container.id) // does this return immediately, or only after the container is running?
+
+    // Can specify a delay before restarting the container
+    dockerClient.restartContainer(container.id, 10)
+  }{}
+
+  // Kill a container
+  standardTry {
+    dockerClient.killContainer(container.id) // does this return immediately, or only after the container is running?
+
+    // Does this specify a the *nix signal to send in order to kill the container?
+    dockerClient.killContainer(container.id, Signal.SIGINT)
+  }{}
+
+  // Rename a container
+  dockerClient.renameContainer(container.id, "bigBadContainer")
+
+  // Pause a container
+  dockerClient.pauseContainer("bigBadContainer")
+
+  // Unpause a container
+  dockerClient.unpauseContainer("bigBadContainer")
+
+  // Attach to a container
+  val stream: String = standardTry {
+    dockerClient.attachContainer(
+      "bigBadContainer",
+      AttachParameter.LOGS,
+      AttachParameter.STDOUT,
+      AttachParameter.STDERR,
+      AttachParameter.STREAM
+    ).readFully
+  }{}
+
+  // Wait a container ... does this block until the container exits?
+  val exit: ContainerExit = dockerClient.waitContainer("bigBadContainer")
+  println(s"container returned status ${ exit.statusCode }")
+
+  def standardTry[T](block: => T)(lastThing: => Any): T =
+    try {
+      block
+    } catch {
+      case e: Exception =>
+        System.err.println(s"Error: ${ e.getMessage }")
+        lastThing
+        System.exit(-1).asInstanceOf[Nothing]
+    }
 }
