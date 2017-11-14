@@ -1,7 +1,7 @@
 import java.util.{List => JList, Map => JMap, Set => JSet}
 import com.spotify.docker.client.DockerClient.AttachParameter
-import com.spotify.docker.client.messages.{ContainerConfig, ContainerCreation, ContainerInfo, ExecCreation, HostConfig, PortBinding}
-import com.spotify.docker.client.{DefaultDockerClient, DockerClient, LogStream}
+import com.spotify.docker.client.messages.{ContainerConfig, ContainerCreation, ContainerInfo, ExecCreation, HostConfig, PortBinding, ProgressMessage}
+import com.spotify.docker.client.{DefaultDockerClient, DockerClient, LogStream, ProgressHandler}
 import scala.collection.JavaConverters._
 
 class Demo extends DockerClientShow {
@@ -15,10 +15,10 @@ class Demo extends DockerClientShow {
   }.get
 
   // Pull an image if it has not already been pulled
-  val imageName = "busybox"
+  val imageName = "ubuntu"
   if (dockerClient.searchImages(imageName).asScala.exists(_.name==imageName))
     println(s"Docker image '$imageName' has already been pulled, no need to pull it again.")
-  else dockerClient.pull(imageName)
+  else dockerClient.pull(imageName, (_: ProgressMessage) => ()) // suppress lots of output
 
   val container: ContainerCreation = standardTry() {
     // Host ports and container ports are the same for the http and ssh services
@@ -42,7 +42,7 @@ class Demo extends DockerClientShow {
       .builder
       .hostConfig(hostConfig)
       .exposedPorts(exposedPorts)
-      .image(imageName)
+      .image(imageName/* + ":latest"*/)
       .cmd("sh", "-c", """while :; do echo "Hello, world"; sleep 1; done""")
       .build
 
@@ -52,23 +52,12 @@ class Demo extends DockerClientShow {
   val cc: ContainerInfo = dockerClient.inspectContainer(container.id)
   println(show(cc))
 
+  sys.ShutdownHookThread { // tidy up if Control-C
+    dockerClient.stopContainer(container.id, 0)
+  }
+
   // Start container
   dockerClient.startContainer(container.id)
-
-  // Execute command inside running container with attached STDOUT and STDERR
-  val execCreation: ExecCreation = dockerClient.execCreate(
-    container.id,
-    Array("sh", "-c", "ls"),
-    DockerClient.ExecCreateParam.attachStdout,
-    DockerClient.ExecCreateParam.attachStderr
-  )
-  val output: LogStream = dockerClient.execStart(execCreation.id)
-  val execOutput: String = output.readFully
-  println(s"Output of command: $execOutput")
-
-
-  // Resize a container's tty
-  dockerClient.resizeTty(container.id, 30, 50) // todo how do we see the change?
 
   // Attach to a container
   // todo send to stdin and receive from stdout and stderr
@@ -80,7 +69,24 @@ class Demo extends DockerClientShow {
       AttachParameter.STDERR,
       AttachParameter.STREAM
     ).readFully
+    println(stream)
   }{}
+
+  // Execute command inside running container with attached STDIN, STDOUT and STDERR
+  val execCreation: ExecCreation = dockerClient.execCreate(
+    container.id,
+    Array("bash", "-c", "ls"),
+    DockerClient.ExecCreateParam.attachStdin,
+    DockerClient.ExecCreateParam.attachStdout,
+    DockerClient.ExecCreateParam.attachStderr
+  )
+  val output: LogStream = dockerClient.execStart(execCreation.id)
+  val execOutput: String = output.readFully
+  println(s"Output of command: $execOutput")
+
+
+  // Resize a container's tty
+  dockerClient.resizeTty(container.id, 30, 50) // todo how do we see the change?
 
   // Stop a container
   standardTry(errorsAreFatal=false) {
