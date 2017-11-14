@@ -1,6 +1,10 @@
+import java.nio.file.Paths
+import java.util
+import java.util.Base64
 import com.spotify.docker.client.DockerClient
-import com.spotify.docker.client.DockerClient.{AttachParameter, ListContainersParam, LogsParam, Signal}
-import com.spotify.docker.client.messages.{Container, ContainerChange, ContainerConfig, ContainerCreation, ContainerExit, ContainerInfo, ContainerStats, TopResults}
+import com.spotify.docker.client.DockerClient.{AttachParameter, ListContainersParam, ListImagesParam, LogsParam, Signal}
+import com.spotify.docker.client.messages.swarm.SecretSpec
+import com.spotify.docker.client.messages.{Container, ContainerChange, ContainerConfig, ContainerCreation, ContainerExit, ContainerInfo, ContainerStats, Image, TopResults}
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -164,6 +168,7 @@ object Main extends App {
   dockerClient.unpauseContainer("bigBadContainer")
 
   // Attach to a container
+  // todo send to stdin and receive from stdout and stderr
   val stream: String = standardTry {
     dockerClient.attachContainer(
       "bigBadContainer",
@@ -181,6 +186,20 @@ object Main extends App {
   // Remove a container
   standardTry {
     dockerClient.removeContainer("bigBadContainer")
+  }{}
+
+  // Make a gzip tarball of the home directory on this machine and copy it to the /tmp directory in a container
+  dockerClient.copyToContainer(Paths.get(sys.props("user.home")), "bigBadContainer", "/tmp")
+
+  // Create secret
+  standardTry {
+    val secret: SecretSpec = SecretSpec.builder.name("asecret").data(Base64.getEncoder.encode("asdf".getBytes).toString).build
+    dockerClient.createSecret(secret)
+  }{}
+
+  // List images
+  standardTry {
+    val quxImages: List[Image] = dockerClient.listImages(ListImagesParam.withLabel("foo", "qux")).asScala.toList
   }{}
 
 
