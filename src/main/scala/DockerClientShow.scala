@@ -83,7 +83,7 @@ trait DockerClientShow {
        |  created         = ${ containerInfo.created }
        |  driver          = ${ containerInfo.driver }
        |  execDriver      = ${ containerInfo.execDriver }
-       |  execIds         = ${ containerInfo.execIds.asScala.mkString(", ") }
+       |  execIds         = ${ Option(containerInfo.execIds).map(_.asScala.mkString(", ")).getOrElse("") }
        |  hostConfig      = ${ containerInfo.hostConfig }
        |  hostnamePath    = ${ containerInfo.hostnamePath }
        |  id              = ${ containerInfo.id }
