@@ -1,4 +1,5 @@
 import de.vandermeer.asciitable.{AT_Context, AsciiTable}
+import de.vandermeer.skb.interfaces.transformers.textformat.TextAlignment
 
 object AsciiWidgets {
   def asciiTable(title: String, rows: List[String]*): String = {
@@ -7,8 +8,9 @@ object AsciiWidgets {
     table.addRule()
     rows foreach { row =>
       table.addRow(row:_*)
+      table.addRule()
     }
-    table.addRule()
+    table.setTextAlignment(TextAlignment.LEFT)
     s"\n$title\n" + table.render
   }
 }

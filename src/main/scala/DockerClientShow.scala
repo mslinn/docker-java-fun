@@ -2,13 +2,26 @@ import java.util.Date
 import AsciiWidgets.asciiTable
 import com.spotify.docker.client.DockerClient
 import com.spotify.docker.client.messages.swarm.Config
-import com.spotify.docker.client.messages.{Container, ContainerInfo, ContainerStats, Info, NetworkSettings, TopResults}
+import com.spotify.docker.client.messages.{Container, ContainerInfo, ContainerMount, ContainerStats, Info, NetworkSettings, TopResults}
 import scala.collection.JavaConverters._
 
 object DockerClientShow {
   implicit class RichConfig(config: Config) {
     override def toString: String =
       s"${ config.configSpec } ${ config.createdAt } ${ config.id } ${ config.updatedAt } ${ config.version }"
+  }
+
+  implicit class RichContainerMount(mount: ContainerMount) {
+    override def toString: String =
+      s"""type:        ${ mount.`type` }<br>
+         |name:        ${ Option(mount.name).getOrElse("") }<br>
+         |driver:      ${ mount.driver }<br>
+         |mode:        ${ mount.mode }<br>
+         |name:        ${ mount.name }<br>
+         |propagation: ${ mount.propagation }<br>
+         |rw:          ${ mount.rw }<br>
+         |source:      ${ mount.source }
+         |""".stripMargin
   }
 
   implicit class RichInfo(info: Info) {
@@ -30,9 +43,9 @@ object DockerClientShow {
 
   implicit class RichNetworkSettings(settings: NetworkSettings) {
     override def toString: String =
-      s"""IP address:  ${ settings.ipAddress }
-         |Ports:       ${ settings.ports.asScala.mkString(", ") }
-         |Sandbox id:  ${ settings.sandboxId }
+      s"""IP address:  ${ settings.ipAddress }<br>
+         |Ports:       ${ settings.ports.asScala.mkString(", ") }<br>
+         |Sandbox id:  ${ settings.sandboxId }<br>
          |Sandbox key: ${ settings.sandboxKey }
          |""".stripMargin
   }
@@ -41,14 +54,16 @@ object DockerClientShow {
 trait DockerClientShow {
   import DockerClientShow._
 
+  protected def last6charsOf(string: String): String = string.substring(string.length-6)
+
   protected def show(container: Container): String =
     asciiTable(
-      s"Container #${ container.id }, created ${ new Date(container.created) } from image '${ container.image }'",
+      s"Container #${ last6charsOf(container.id) }, created ${ new Date(container.created) } from image '${ container.image }'",
       List(
         List("Command",               container.command),
         List("Image id",              container.imageId),
         List("Labels",                container.labels.asScala.mkString(", ")),
-        List("Mounts",                container.mounts.asScala.mkString(", ")),
+        List("Mounts",                container.mounts.asScala.map(RichContainerMount).mkString(", ")),
         List("Names",                 container.names.asScala.mkString(", ")),
         List("Network settings",      RichNetworkSettings(container.networkSettings).toString),
         List("Ports",                 container.ports.asScala.mkString(", ")),

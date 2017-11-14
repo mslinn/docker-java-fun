@@ -5,11 +5,12 @@ import AsciiWidgets.asciiTable
 import com.spotify.docker.client.DockerClient.{AttachParameter, ListContainersParam, ListImagesParam, LogsParam, Signal}
 import com.spotify.docker.client.auth.FixedRegistryAuthSupplier
 import com.spotify.docker.client.messages.swarm.SecretSpec
-import com.spotify.docker.client.messages.{Container, ContainerChange, ContainerConfig, ContainerCreation, ContainerExit, ContainerInfo, ContainerStats, Image, ProgressMessage, TopResults}
-import com.spotify.docker.client.{DefaultDockerClient, DockerCertificates}
+import com.spotify.docker.client.messages.{Container, ContainerChange, ContainerConfig, ContainerCreation, ContainerExit, ContainerInfo, ContainerStats, ExecCreation, HostConfig, Image, PortBinding, ProgressMessage, TopResults}
+import com.spotify.docker.client.{DefaultDockerClient, DockerCertificates, DockerClient, LogStream}
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import scala.collection.JavaConverters._
 import scala.collection.mutable
+import java.util.{List => JList, Map => JMap}
 
 /** Typing along with https://github.com/spotify/docker-dockerClient/blob/master/docs/user_manual.md */
 object Main extends App {
@@ -41,6 +42,7 @@ class Demo extends DockerClientShow {
        .useProxy(false)
        .build
    }{}
+  dockerClient2.foreach(_.close) // we don't need it any more
 
   standardTry(errorsAreFatal=false) {
     val runningContainers: mutable.Seq[Container] = dockerClient.listContainers().asScala
@@ -54,10 +56,56 @@ class Demo extends DockerClientShow {
 
   standardTry(errorsAreFatal=false) {
     val allContainers: List[Container] = dockerClient.listContainers(ListContainersParam.allContainers).asScala.toList
-    allContainers.foreach { container => println(show(container)) }
+    val containersShown: List[String] = allContainers.map { container =>
+      val containerShown: String = show(container)
+      containerShown
+    }
+    containersShown foreach println
   }{}
 
-  val container: ContainerCreation = dockerClient.createContainer(ContainerConfig.builder.build)
+  // Pull an image
+  val image = "busybox"
+  dockerClient.pull(image)
+
+  val container: ContainerCreation = standardTry() {
+    // Host ports and container ports are the same
+    val hostPorts: List[(String, List[PortBinding])] =
+      List(80, 22) map { port => (port.toString, List(PortBinding.of("0.0.0.0", port))) }
+
+    // Bind container port 443 to an automatically allocated available host port.
+    val sslTuple: (String, List[PortBinding]) = ("443", List(PortBinding.randomPort("0.0.0.0")))
+
+    val portBindings: JMap[String, JList[PortBinding]] =
+      (sslTuple :: hostPorts)
+        .toMap
+        .map { case (key, value) => (key, value.asJava) }
+      .asJava
+
+    val hostConfig = HostConfig.builder.portBindings(portBindings).build
+
+    val containerConfig = ContainerConfig
+      .builder
+      .hostConfig(hostConfig)
+      .exposedPorts(hostPorts.map(_._1).toSet.asJava)
+      .image(image)
+      .cmd("sh", "-c", """while :; do echo "Hello, world"; sleep 1; done""")
+      .build
+    dockerClient.createContainer(containerConfig)
+  }{}.get
+
+  // Start container
+  dockerClient.startContainer(container.id)
+
+  // Execute command inside running container with attached STDOUT and STDERR
+  val execCreation: ExecCreation = dockerClient.execCreate(
+    container.id,
+    Array("sh", "-c", "ls"),
+    DockerClient.ExecCreateParam.attachStdout,
+    DockerClient.ExecCreateParam.attachStderr
+  )
+  val output: LogStream = dockerClient.execStart(execCreation.id)
+  val execOutput: String = output.readFully
+  println(s"Output of command: $execOutput")
 
   // Inspect a container
   val containerInfo: ContainerInfo = dockerClient.inspectContainer(container.id)
@@ -165,6 +213,9 @@ class Demo extends DockerClientShow {
   standardTry(errorsAreFatal=false) {
     val quxImages: List[Image] = dockerClient.listImages(ListImagesParam.withLabel("foo", "qux")).asScala.toList
   }{}
+
+  // Close the docker client
+  dockerClient.close()
 
   // Build image from a Dockerfile
   standardTry(errorsAreFatal=false) {
