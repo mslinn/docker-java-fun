@@ -178,7 +178,13 @@ object Main extends App {
   val exit: ContainerExit = dockerClient.waitContainer("bigBadContainer")
   println(s"container returned status ${ exit.statusCode }")
 
-  def standardTry[T](block: => T)(lastThing: => Any): T =
+  // Remove a container
+  standardTry {
+    dockerClient.removeContainer("bigBadContainer")
+  }{}
+
+
+  protected def standardTry[T](block: => T)(lastThing: => Any): T =
     try {
       block
     } catch {
