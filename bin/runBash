@@ -11,7 +11,8 @@ IMAGE="ubuntu:17.10"
 
 echo "Running $NAME"
 docker run \
-  -d                    `# Run in background (detached mode)` \
+  -d                    `# Run in background, detached mode` \
+  -e VAR1="Blah blah"   `# Define environment variable` \
   -i                    `# Keep STDIN open even if not attached` \
   --name "$NAME"        `# Friendly name to refer to this container instance` \
   --rm                  `# Remove container when it or the daemon exits` \
@@ -24,12 +25,29 @@ Type ^d to send EOF to STDIN, which will cause the container to shut down.
 Detach from a container and leave it running by typing CTRL-p CTRL-q."
 
 echo "
-$MSG"
-docker attach "$NAME"
+Execing bash in $NAME, just displays the value of the VAR1 environment variable and exits."
+X="$(
+  docker exec \
+    -i                   `# Keep STDIN open even if not attached` \
+    -t                   `# Allocate a pseudo-TTY`\
+    "$NAME" /bin/bash -c 'echo $VAR1'
+)"
+echo "The value of VAR1 was $X"
 
 echo "
-Re-$MSG"
-docker attach "$NAME"
+Execing bash in $NAME again, this time with an interactive session."
+docker exec \
+  -i                   `# Keep STDIN open even if not attached`\
+  -t                   `# Allocate a pseudo-TTY`\
+  "$NAME" /bin/bash
+
+#echo "
+#$MSG"
+#docker attach --sig-proxy=false "$NAME"
+
+#echo "
+#Re-$MSG"
+#docker attach --sig-proxy=false "$NAME"
 
 echo "
 Stopping $NAME"

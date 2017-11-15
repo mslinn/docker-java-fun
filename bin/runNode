@@ -29,6 +29,10 @@ echo "
 $MSG"
 docker attach "$NAME"
 
+echo "
+Re-$MSG"
+docker attach "$NAME"
+
 #echo "
 #Stopping $NAME"
 #docker stop "$NAME"
