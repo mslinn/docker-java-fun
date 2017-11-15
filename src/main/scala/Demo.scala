@@ -33,11 +33,12 @@ class Demo(imageName: String) extends DockerClientShow {
     dockerClient.createContainer(containerConfig)
   }{}.get
 
-  val cc: ContainerInfo = dockerClient.inspectContainer(container.id)
-  println(show(cc))
+  val containerInfo: ContainerInfo = dockerClient.inspectContainer(container.id)
+  println(show(containerInfo))
 
   sys.ShutdownHookThread { // tidy up if Control-C
     dockerClient.stopContainer(container.id, 0)
+    dockerClient.close()
   }
 
   // Start container
@@ -75,9 +76,8 @@ class Demo(imageName: String) extends DockerClientShow {
       println(s"Output of $command: $execOutput")
     }
 
-
   // Resize a container's tty
-  dockerClient.resizeTty(container.id, 30, 50) // todo how do we see the change?
+  dockerClient.resizeTty(container.id, 30, 50) // todo how do we see the change? What does this actually do?
 
   // Stop a container
   standardTry(errorsAreFatal=false) {
