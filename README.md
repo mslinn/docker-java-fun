@@ -1,7 +1,7 @@
 # docker-java-fun
 
 <img src='https://i1.wp.com/blog.docker.com/wp-content/uploads/2013/06/Docker-logo-011.png?ssl=1' align='right' width='20%'>
-<img src='https://seeklogo.com/images/S/spotify-2015-logo-560E071CB7-seeklogo.com.png' align='right' width='15%' style="margin-right: 0.5em;>
+<img src='https://seeklogo.com/images/S/spotify-2015-logo-560E071CB7-seeklogo.com.png' align='right' width='15%' style="margin-right: 0.5em;">
 
 Fooling around with Spotify's [docker-client](https://github.com/spotify/docker-client) library.
 
