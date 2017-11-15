@@ -130,7 +130,7 @@ trait DockerClientShow {
     s"""Container:
        |  appArmorProfile = ${ containerInfo.appArmorProfile }
        |  args            = ${ containerInfo.args.asScala.mkString(", ") }
-       |  config          = ${ containerInfo.config }
+       |  config          = ${ RichContainerConfig(containerInfo.config) }
        |  created         = ${ containerInfo.created }
        |  driver          = ${ containerInfo.driver }
        |  execDriver      = ${ containerInfo.execDriver }
