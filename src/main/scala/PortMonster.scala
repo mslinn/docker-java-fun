@@ -10,7 +10,7 @@ object HostClientPorts {
     hostPorts.toList.map(hostPort => HostClientPorts(hostPort, hostPort + offset))
 }
 
-case class HostClientPorts(hostPort: Int, clientPort: Int)
+case class HostClientPorts(clientPort: Int, hostPort: Int)
 
 
 case class PortMonster(hostClientPorts: List[HostClientPorts]) {
@@ -22,7 +22,7 @@ case class PortMonster(hostClientPorts: List[HostClientPorts]) {
           (clientPort.toString, List(PortBinding.of("0.0.0.0", hostPort)))
       }
 
-  // Bind container port 443 to an automatically allocated available host port.
+  // Bind container/client port 443 to an automatically allocated available host port.
   protected val sslTuple: (String, List[PortBinding]) = ("443", List(PortBinding.randomPort("0.0.0.0")))
 
   protected val portBindings: JMap[String, JList[PortBinding]] =
@@ -32,7 +32,7 @@ case class PortMonster(hostClientPorts: List[HostClientPorts]) {
     .asJava
 
   portBindings.asScala.foreach { case (key: String, portBindings: JList[PortBinding]) =>
-    println(s"Host port $key -> portBindings ${ portBindings.asScala.mkString(", ") }")
+    println(s"Container port $key -> ${ portBindings.asScala.mkString(", ") }")
   }
 
   val hostConfig: HostConfig = HostConfig.builder.portBindings(portBindings).build
