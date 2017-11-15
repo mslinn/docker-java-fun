@@ -10,7 +10,7 @@ object HostClientPorts {
     hostPorts.toList.map(hostPort => HostClientPorts(hostPort, hostPort + offset))
 }
 
-case class HostClientPorts(clientPort: Int, hostPort: Int)
+case class HostClientPorts(hostPort: Int, clientPort: Int)
 
 
 case class PortMonster(hostClientPorts: List[HostClientPorts]) {
@@ -19,7 +19,7 @@ case class PortMonster(hostClientPorts: List[HostClientPorts]) {
     HostClientPorts(2000, 80, 22)
       .map {
         case HostClientPorts(hostPort, clientPort) =>
-          (clientPort.toString, List(PortBinding.of("0.0.0.0", hostPort)))
+          (hostPort.toString, List(PortBinding.of("0.0.0.0", clientPort)))
       }
 
   // Bind container/client port 443 to an automatically allocated available host port.
@@ -32,7 +32,7 @@ case class PortMonster(hostClientPorts: List[HostClientPorts]) {
     .asJava
 
   portBindings.asScala.foreach { case (key: String, portBindings: JList[PortBinding]) =>
-    println(s"Container port $key -> ${ portBindings.asScala.mkString(", ") }")
+    println(s"Container port $key -> portBindings ${ portBindings.asScala.mkString(", ") }")
   }
 
   val hostConfig: HostConfig = HostConfig.builder.portBindings(portBindings).build
