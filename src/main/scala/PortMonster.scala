@@ -31,6 +31,10 @@ case class PortMonster(hostClientPorts: List[HostClientPorts]) {
       .map { case (key, value) => (key, value.asJava) }
     .asJava
 
+  portBindings.asScala.foreach { case (key: String, portBindings: JList[PortBinding]) =>
+    println(s"Host port $key -> portBindings ${ portBindings.asScala.mkString(", ") }")
+  }
+
   val hostConfig: HostConfig = HostConfig.builder.portBindings(portBindings).build
   val exposedPorts: JSet[String] = portMappingTuples.map(_._1).toSet.asJava
 }
