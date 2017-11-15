@@ -49,22 +49,22 @@ object DockerClientShow {
 
   implicit class RichHostConfig(config: HostConfig) {
     override def toString: String =
-      s"""Auto remove:      ${ config.autoRemove }<br>
-         |Binds:            ${ config.binds.asScala.mkString(", ") }<br>
-         |CPU period:       ${ config.cpuPeriod }<br>
-         |CPU quota:        ${ config.cpuQuota }<br>
-         |CPUs:             ${ config.cpusetCpus }<br>
-         |CPU mems:         ${ config.cpusetMems }
-         |CPU shares:       ${ config.cpuShares }
-         |IPC mode:         ${ config.ipcMode }
-         |Log config:       ${ config.logConfig }
-         |Memory:           ${ config.memory }
-         |  Reservation:      ${ config.memoryReservation }
-         |  Swap:             ${ config.memorySwap }
-         |Network mode:     ${ config.networkMode }
-         |OOM kill disable: ${ config.oomKillDisable }
-         |PortBindings:     ${ config.portBindings }
-         |ULimits:          ${ config.ulimits }
+      s"""Auto remove:      ${ config.autoRemove }
+         |Binds:            ${ Option(config.binds).map(_.asScala.mkString(", ")).getOrElse("") }
+         |CPU period:       ${ Option(config.cpuPeriod).getOrElse("") }
+         |CPU quota:        ${ Option(config.cpuQuota).getOrElse("") }
+         |CPUs:             ${ Option(config.cpusetCpus).getOrElse("") }
+         |CPU mems:         ${ Option(config.cpusetMems).getOrElse("") }
+         |CPU shares:       ${ Option(config.cpuShares).getOrElse("") }
+         |IPC mode:         ${ Option(config.ipcMode).getOrElse("") }
+         |Log config:       ${ Option(config.logConfig).getOrElse("") }
+         |Memory:           ${ Option(config.memory).getOrElse("") }
+         |  Reservation:      ${ Option(config.memoryReservation).getOrElse("") }
+         |  Swap:             ${ Option(config.memorySwap).getOrElse("") }
+         |Network mode:     ${ Option(config.networkMode).getOrElse("") }
+         |OOM kill disable: ${ Option(config.oomKillDisable).getOrElse("") }
+         |PortBindings:     ${ Option(config.portBindings).getOrElse("") }
+         |ULimits:          ${ Option(config.ulimits).getOrElse("") }
          |""".stripMargin
   }
 
