@@ -2,7 +2,7 @@ import java.util.Date
 import AsciiWidgets.asciiTable
 import com.spotify.docker.client.DockerClient
 import com.spotify.docker.client.messages.swarm.Config
-import com.spotify.docker.client.messages.{Container, ContainerInfo, ContainerMount, ContainerStats, Info, NetworkSettings, TopResults}
+import com.spotify.docker.client.messages.{Container, ContainerConfig, ContainerInfo, ContainerMount, ContainerStats, HostConfig, Info, NetworkSettings, TopResults}
 import scala.collection.JavaConverters._
 
 /** Formatted output for the demo */
@@ -10,6 +10,28 @@ object DockerClientShow {
   implicit class RichConfig(config: Config) {
     override def toString: String =
       s"${ config.configSpec } ${ config.createdAt } ${ config.id } ${ config.updatedAt } ${ config.version }"
+  }
+
+  implicit class RichContainerConfig(config: ContainerConfig) {
+    override def toString: String =
+      s"""Container
+         |  Cmd:              ${ config.cmd }<br>
+         |  Domain name:      ${ config.domainname }<br>
+         |  Entry points:     ${ config.entrypoint.asScala.mkString(", ") }<br>
+         |  Env:              ${ config.env.asScala.mkString(", ") }<br>
+         |  Exposed ports:    ${ config.exposedPorts }<br>
+         |  Host config:      ${ RichHostConfig(config.hostConfig) }<br>
+         |  Host name:        ${ config.hostname }<br>
+         |  Image:            ${ config.image }
+         |  Labels:           ${ config.labels }
+         |  macAddress:       ${ config.macAddress }
+         |  Network disabled: ${ config.networkDisabled }
+         |  Network config:   ${ config.networkingConfig }
+         |  Port specs:       ${ config.portSpecs.asScala.mkString(", ") }
+         |  User:             ${ config.user }
+         |  Volume names:     ${ config.volumeNames.asScala.mkString(", ") }
+         |  Working dir:      ${ config.workingDir }
+         |""".stripMargin
   }
 
   implicit class RichContainerMount(mount: ContainerMount) {
@@ -25,22 +47,50 @@ object DockerClientShow {
          |""".stripMargin
   }
 
+  implicit class RichHostConfig(config: HostConfig) {
+    override def toString: String =
+      s"""Auto remove:      ${ config.autoRemove }<br>
+         |Binds:            ${ config.binds.asScala.mkString(", ") }<br>
+         |CPU period:       ${ config.cpuPeriod }<br>
+         |CPU quota:        ${ config.cpuQuota }<br>
+         |CPUs:             ${ config.cpusetCpus }<br>
+         |CPU mems:         ${ config.cpusetMems }
+         |CPU shares:       ${ config.cpuShares }
+         |IPC mode:         ${ config.ipcMode }
+         |Log config:       ${ config.logConfig }
+         |Memory:           ${ config.memory }
+         |  Reservation:      ${ config.memoryReservation }
+         |  Swap:             ${ config.memorySwap }
+         |Network mode:     ${ config.networkMode }
+         |OOM kill disable: ${ config.oomKillDisable }
+         |PortBindings:     ${ config.portBindings }
+         |ULimits:          ${ config.ulimits }
+         |""".stripMargin
+  }
+
   implicit class RichInfo(info: Info) {
     override def toString: String =
-          s"""Architecture: ${ info.architecture }
-             |Containers:   ${ info.containers }
-             |  Paused:       ${ info.containersPaused }
-             |  Running:      ${ info.containersRunning }
-             |  Stopped:      ${ info.containersStopped }
-             |CPUs:         ${ info.cpus }
-             |Root dir:     ${ info.dockerRootDir }
-             |Id:           ${ info.id }
-             |Images:       ${ info.images }
-             |initPath:     ${ Option(info.initPath).mkString }
-             |Memory:       ${ info.kernelMemory }
-             |Version:      ${ info.kernelVersion }
-             |""".stripMargin
+      s"""Architecture: ${ info.architecture }
+         |Containers:   ${ info.containers }
+         |  Paused:       ${ info.containersPaused }
+         |  Running:      ${ info.containersRunning }
+         |  Stopped:      ${ info.containersStopped }
+         |CPUs:         ${ info.cpus }
+         |Root dir:     ${ info.dockerRootDir }
+         |Id:           ${ info.id }
+         |Images:       ${ info.images }
+         |initPath:     ${ Option(info.initPath).mkString }
+         |Memory:       ${ info.kernelMemory }
+         |Version:      ${ info.kernelVersion }
+         |""".stripMargin
   }
+
+  /*implicit class NetworkingConfig(config: NetworkingConfig) {
+    override def toString: String =
+      s"""Architecture: ${ config.config.config. }
+         |Version:      ${ config.kernelVersion }
+         |""".stripMargin
+  }*/
 
   implicit class RichNetworkSettings(settings: NetworkSettings) {
     override def toString: String =

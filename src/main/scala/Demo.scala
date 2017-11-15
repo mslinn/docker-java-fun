@@ -1,4 +1,4 @@
-import com.spotify.docker.client.messages.{ContainerConfig, ContainerCreation, ContainerInfo, ExecCreation, HostConfig, PortBinding, ProgressMessage}
+import com.spotify.docker.client.messages.{ContainerConfig, ContainerCreation, ContainerInfo, ExecCreation, ProgressMessage}
 import com.spotify.docker.client.{DefaultDockerClient, DockerClient, LogStream}
 import scala.collection.JavaConverters._
 
