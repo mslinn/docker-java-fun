@@ -1,6 +1,6 @@
 # docker-java-fun
 
-Fooling around with Spotify's [docker-client]() library.
+Fooling around with Spotify's [docker-client](https://github.com/spotify/docker-client) library.
 
 [![Build Status](https://travis-ci.org/mslinn/docker-java-fun.svg?branch=master)](https://travis-ci.org/mslinn/docker-java-fun)
 [![GitHub version](https://badge.fury.io/gh/mslinn%2Fdocker-java-fun.svg)](https://badge.fury.io/gh/mslinn%2Fdocker-java-fun)
