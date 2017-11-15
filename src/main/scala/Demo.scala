@@ -1,4 +1,3 @@
-import java.util.{List => JList, Map => JMap, Set => JSet}
 import com.spotify.docker.client.messages.{ContainerConfig, ContainerCreation, ContainerInfo, ExecCreation, HostConfig, PortBinding, ProgressMessage}
 import com.spotify.docker.client.{DefaultDockerClient, DockerClient, LogStream}
 import scala.collection.JavaConverters._
@@ -13,34 +12,21 @@ class Demo(imageName: String) extends DockerClientShow {
     dockerClient
   }.get
 
-  // Pull an image if it has not already been pulled
-  if (dockerClient.searchImages(imageName).asScala.exists(_.name==imageName))
-    println(s"Docker image '$imageName' has already been pulled, no need to pull it again.")
-  else dockerClient.pull(imageName, (_: ProgressMessage) => ()) // suppress lots of output
+  // Pull the requested image if it has not already been pulled
+  standardTry() {
+    if (dockerClient.searchImages(imageName).asScala.exists(_.name==imageName))
+      println(s"Docker image '$imageName' has already been pulled, no need to pull it again.")
+    else dockerClient.pull(imageName, (_: ProgressMessage) => ()) // Mute the ProgressMessage handler
+  }{}.get
 
   val container: ContainerCreation = standardTry() {
-    // Host ports and container ports are the same for the http and ssh services
-    val hostPorts: List[(String, List[PortBinding])] =
-      List(2080 -> 80, 2022 -> 22)
-        .map { case (hostPort, clientPort) => (clientPort.toString, List(PortBinding.of("0.0.0.0", hostPort))) }
-
-    // Bind container port 443 to an automatically allocated available host port.
-    val sslTuple: (String, List[PortBinding]) = ("443", List(PortBinding.randomPort("0.0.0.0")))
-
-    val portBindings: JMap[String, JList[PortBinding]] =
-      (sslTuple :: hostPorts)
-        .toMap
-        .map { case (key, value) => (key, value.asJava) }
-      .asJava
-
-    val hostConfig = HostConfig.builder.portBindings(portBindings).build
-    val exposedPorts: JSet[String] = hostPorts.map(_._1).toSet.asJava
+    val portMonster = PortMonster(HostClientPorts(2000, 80, 22))
 
     val containerConfig = ContainerConfig
       .builder
-      .hostConfig(hostConfig)
-      .exposedPorts(exposedPorts)
-      .image(imageName/* + ":latest"*/)
+      .hostConfig(portMonster.hostConfig)
+      .exposedPorts(portMonster.exposedPorts)
+      .image(imageName /*+ ":latest"*/)
       .cmd("sh", "-c", """while :; do echo "Hello, world"; sleep 1; done""")
       .build
 
