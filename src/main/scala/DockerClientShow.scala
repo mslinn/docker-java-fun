@@ -135,7 +135,7 @@ trait DockerClientShow {
        |  driver          = ${ containerInfo.driver }
        |  execDriver      = ${ containerInfo.execDriver }
        |  execIds         = ${ Option(containerInfo.execIds).map(_.asScala.mkString(", ")).getOrElse("") }
-       |  hostConfig      = ${ containerInfo.hostConfig }
+       |  hostConfig      = ${ RichHostConfig(containerInfo.hostConfig) }
        |  hostnamePath    = ${ containerInfo.hostnamePath }
        |  id              = ${ containerInfo.id }
        |  image           = ${ containerInfo.image }
@@ -143,7 +143,7 @@ trait DockerClientShow {
        |  mountLabel      = ${ containerInfo.mountLabel }
        |  mounts          = ${ containerInfo.mounts.asScala.mkString(", ") }
        |  name            = ${ containerInfo.name }
-       |  networkSettings = ${ containerInfo.networkSettings }
+       |  networkSettings = ${ RichNetworkSettings(containerInfo.networkSettings) }
        |  node            = ${ containerInfo.node }
        |  path            = ${ containerInfo.path }
        |  processLabel    = ${ containerInfo.processLabel }
