@@ -1,0 +1,40 @@
+#!/bin/bash
+
+NAME="ubuntu1"
+IMAGE="ubuntu:17.10"
+
+# From https://github.com/nodejs/docker-node
+# See also https://docs.docker.com/engine/reference/run
+#
+# Containers started in detached mode exit when the root process used to run the container exits,
+# unless the --rm option is also specified.
+
+echo "Running $NAME"
+docker run \
+  -d                    `# Run in background (detached mode)` \
+  -i                    `# Keep STDIN open even if not attached` \
+  --name "$NAME"        `# Friendly name to refer to this container instance` \
+  --rm                  `# Remove container when it or the daemon exits` \
+  --sig-proxy=false     `# Ignore CTRL-c` \
+  -t                    `# Allocate a pseudo-TTY` \
+  "$IMAGE" /bin/bash
+
+MSG="Attaching to $NAME.
+Type ^d to send EOF to STDIN, which will cause the container to shut down.
+Detach from a container and leave it running by typing CTRL-p CTRL-q."
+
+echo "
+$MSG"
+docker attach "$NAME"
+
+echo "
+Re-$MSG"
+docker attach "$NAME"
+
+echo "
+Stopping $NAME"
+docker stop "$NAME"
+
+#echo "
+#Removing $NAME (not required because of the --rm argument)"
+#docker rm "$NAME"

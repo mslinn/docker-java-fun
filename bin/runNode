@@ -1,0 +1,34 @@
+#!/bin/bash
+
+NAME=nodejs1
+IMAGE="node:4"
+
+# From https://github.com/nodejs/docker-node
+# See also https://docs.docker.com/engine/reference/run
+#
+# Containers started in detached mode exit when the root process used to run the container exits,
+# unless the --rm option is also specified.
+# If -d is used with --rm, the container is removed when it exits or when the daemon exits.
+
+docker run \
+  -d                            `# Run in background (detached mode)` \
+  -e NPM_CONFIG_LOGLEVEL=info   `# ` \
+  -i                            `# Keep STDIN open even if not attached` \
+  --name "$NAME"                `# Friendly name to refer to this container instance` \
+  --rm                          `# Remove container when it or the daemon exits` \
+  -t                            `# Allocate a pseudo-TTY` \
+  -v "$PWD":/usr/src/app        `# Bind mount a volume` \
+  -w /usr/src/app               `# Set working directory within the container` \
+  "$IMAGE" node "$*"
+
+MSG="Attaching to $NAME.
+Type ^d to send EOF to STDIN, which will cause the container to shut down.
+Detach from a container and leave it running by typing CTRL-p CTRL-q."
+
+echo "
+$MSG"
+docker attach "$NAME"
+
+#echo "
+#Stopping $NAME"
+#docker stop "$NAME"
