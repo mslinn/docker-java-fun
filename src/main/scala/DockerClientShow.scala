@@ -5,6 +5,7 @@ import com.spotify.docker.client.messages.swarm.Config
 import com.spotify.docker.client.messages.{Container, ContainerInfo, ContainerMount, ContainerStats, Info, NetworkSettings, TopResults}
 import scala.collection.JavaConverters._
 
+/** Formatted output for the demo */
 object DockerClientShow {
   implicit class RichConfig(config: Config) {
     override def toString: String =

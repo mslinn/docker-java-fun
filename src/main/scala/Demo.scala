@@ -1,11 +1,9 @@
-import java.io.{PipedInputStream, PipedOutputStream}
 import java.util.{List => JList, Map => JMap, Set => JSet}
-import com.spotify.docker.client.DockerClient.AttachParameter
 import com.spotify.docker.client.messages.{ContainerConfig, ContainerCreation, ContainerInfo, ExecCreation, HostConfig, PortBinding, ProgressMessage}
-import com.spotify.docker.client.{DefaultDockerClient, DockerClient, LogStream, ProgressHandler}
+import com.spotify.docker.client.{DefaultDockerClient, DockerClient, LogStream}
 import scala.collection.JavaConverters._
 
-class Demo extends DockerClientShow {
+class Demo(imageName: String) extends DockerClientShow {
   // Create a dockerClient based on DOCKER_CERT_PATH env vars, or if not defined, configuration settings in ~/.docker
   // DOCKER_HOST does not seem to be referenced, contrary to the tutorial
   val dockerClient: DefaultDockerClient = standardTry() {
@@ -16,7 +14,6 @@ class Demo extends DockerClientShow {
   }.get
 
   // Pull an image if it has not already been pulled
-  val imageName = "ubuntu"
   if (dockerClient.searchImages(imageName).asScala.exists(_.name==imageName))
     println(s"Docker image '$imageName' has already been pulled, no need to pull it again.")
   else dockerClient.pull(imageName, (_: ProgressMessage) => ()) // suppress lots of output
