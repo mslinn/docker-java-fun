@@ -23,7 +23,7 @@ Right now this is the only way:
 
 ### Run Script
 B0rked.
-Maybe I'll figure out the problem with `sbt-assemply` at some point.
+Maybe I'll figure out the problem with `sbt-assembly` at some point.
 
 The `bin/run` Bash script assembles this project into a fat jar and runs it.
 Sample usage, which runs the `Main` entry point in `src/main/scala/Main.scala:
